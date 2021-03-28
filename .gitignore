@@ -6,3 +6,6 @@ Cargo.lock
 /src/libdoh/target/
 
 .private/
+.env
+.env.letsencrypt
+doh01.typeq.org*
