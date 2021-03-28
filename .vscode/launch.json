@@ -1,0 +1,33 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'doh-server-fork'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=doh-proxy",
+          "--package=doh-proxy",
+          "--no-default-features"
+        ],
+        "filter": {
+          "name": "doh-proxy",
+          "kind": "bin"
+        }
+      },
+      "env": {
+        "RUST_LOG": "debug"
+      },
+      "args": [
+        "--server-address=9.9.9.9:53",
+        "--listen-address=127.0.0.1:58080"
+      ],
+      "cwd": "${workspaceFolder}/.private"
+    }
+  ]
+}
