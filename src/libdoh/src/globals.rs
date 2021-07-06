@@ -30,6 +30,8 @@ pub struct Globals {
     pub keepalive: bool,
     pub disable_post: bool,
     pub allow_odoh_post: bool,
+    pub disable_auth: bool,
+    pub hmac_secret: String, // TODO: 本当にコマンドラインで読み込むだけで良いか？ hmac secret
     pub odoh_configs_path: String,
     pub odoh_rotator: Arc<ODoHRotator>,
 

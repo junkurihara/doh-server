@@ -50,6 +50,8 @@ fn main() {
         keepalive: true,
         disable_post: false,
         allow_odoh_post: false,
+        disable_auth: false,
+        hmac_secret: HMAC_SECRET.to_string(), // TODO: 本当にコマンドラインで読み込むだけで良いか？ hmac secret
         odoh_configs_path: ODOH_CONFIGS_PATH.to_string(),
         odoh_rotator: Arc::new(rotator),
 

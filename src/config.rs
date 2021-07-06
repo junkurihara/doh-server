@@ -134,6 +134,21 @@ pub fn parse_opts(globals: &mut Globals) {
                 .short("O")
                 .long("allow-odoh-post")
                 .help("Allow POST queries over ODoH even if they have been disabed for DoH"),
+        )
+        .arg(
+            Arg::with_name("disable_auth")
+                .short("D")
+                .long("disable-auth")
+                .help("Disable authentication using HTTP Authorization header"),
+        )
+        .arg(
+            // TODO: 本当にコマンドラインで読み込むだけで良いか？ hmac secret
+            Arg::with_name("hmac_secret")
+                .short("S")
+                .long("hmac-secret")
+                .takes_value(true)
+                .default_value(HMAC_SECRET)
+                .help("HMAC secret key (default = \"secret\")"),
         );
 
     #[cfg(feature = "tls")]
@@ -190,6 +205,8 @@ pub fn parse_opts(globals: &mut Globals) {
     globals.keepalive = !matches.is_present("disable_keepalive");
     globals.disable_post = matches.is_present("disable_post");
     globals.allow_odoh_post = matches.is_present("allow_odoh_post");
+    globals.disable_auth = matches.is_present("disable_auth");
+    globals.hmac_secret = matches.value_of("hmac_secret").unwrap().to_string(); // TODO: 本当にコマンドラインで読み込むだけで良いか？ hmac secret
 
     #[cfg(feature = "tls")]
     {

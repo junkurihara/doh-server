@@ -8,3 +8,4 @@ pub const TIMEOUT_SEC: u64 = 10;
 pub const MAX_TTL: u32 = 86400 * 7;
 pub const MIN_TTL: u32 = 10;
 pub const ERR_TTL: u32 = 2;
+pub const HMAC_SECRET: &str = "secret"; // TODO: 本当にコマンドラインで読み込むだけで良いか？ hmac secret
