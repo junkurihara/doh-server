@@ -128,6 +128,12 @@ pub fn parse_opts(globals: &mut Globals) {
                 .short("P")
                 .long("disable-post")
                 .help("Disable POST queries"),
+        )
+        .arg(
+            Arg::with_name("allow_odoh_post")
+                .short("O")
+                .long("allow-odoh-post")
+                .help("Allow POST queries over ODoH even if they have been disabed for DoH"),
         );
 
     #[cfg(feature = "tls")]
@@ -183,6 +189,7 @@ pub fn parse_opts(globals: &mut Globals) {
     globals.err_ttl = matches.value_of("err_ttl").unwrap().parse().unwrap();
     globals.keepalive = !matches.is_present("disable_keepalive");
     globals.disable_post = matches.is_present("disable_post");
+    globals.allow_odoh_post = matches.is_present("allow_odoh_post");
 
     #[cfg(feature = "tls")]
     {
@@ -200,10 +207,21 @@ pub fn parse_opts(globals: &mut Globals) {
             builder = builder.with_address(public_address.to_string());
         }
         println!(
-            "Test DNS stamp to reach [{}]: [{}]",
+            "Test DNS stamp to reach [{}] over DoH: [{}]\n",
             hostname,
             builder.serialize().unwrap()
         );
-        println!("Check out https://dnscrypt.info/stamps/ to compute the actual stamp.\n")
+
+        let builder =
+            dnsstamps::ODoHTargetBuilder::new(hostname.to_string(), globals.path.to_string());
+        println!(
+            "Test DNS stamp to reach [{}] over Oblivious DoH: [{}]\n",
+            hostname,
+            builder.serialize().unwrap()
+        );
+
+        println!("Check out https://dnscrypt.info/stamps/ to compute the actual stamps.\n")
+    } else {
+        println!("Please provide a fully qualified hostname (-H <hostname> command-line option) to get test DNS stamps for your server.\n");
     }
 }

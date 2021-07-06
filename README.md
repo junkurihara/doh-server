@@ -1,6 +1,6 @@
 # doh-proxy
 
-A fast and secure DoH (DNS-over-HTTPS) server.
+A fast and secure DoH (DNS-over-HTTPS) and ODoH (Oblivious DoH) server.
 
 `doh-proxy` is written in Rust, and has been battle-tested in production since February 2018. It doesn't do DNS resolution on its own, but can sit in front of any DNS resolver in order to augment it with DoH support.
 
@@ -29,12 +29,11 @@ cargo install doh-proxy --no-default-features
 ## Usage
 
 ```text
-A DNS-over-HTTPS (DoH) proxy
-
 USAGE:
     doh-proxy [FLAGS] [OPTIONS]
 
 FLAGS:
+    -O, --allow-odoh-post      Allow POST queries over ODoH even with they have been disabed for DoH
     -K, --disable-keepalive    Disable keepalive
     -P, --disable-post         Disable POST queries
     -h, --help                 Prints help information
@@ -109,6 +108,19 @@ It also provides DNS caching, server-side filtering, metrics, and TCP connection
 
 Unless the front-end is a CDN, an ideal setup is to use `doh-proxy` behind `Encrypted DNS Server`.
 
+## Oblivious DoH (ODoH)
+
+Oblivious DoH is similar to Anonymized DNSCrypt, but for DoH. It requires relays, but also upstream DoH servers that support the protocol.
+
+This proxy supports ODoH termination (not relaying) out of the box.
+
+However, ephemeral keys are currently only stored in memory. In a load-balanced configuration, sticky sessions must be used.
+
+Currently available ODoH relays only use `POST` queries.
+So, `POST` queries have been disabled for regular DoH queries, accepting them is required to be compatible with ODoH relays.
+
+This can be achieved with the `--allow-odoh-post` command-line switch.
+
 ## Operational recommendations
 
 * DoH can be easily detected and blocked using SNI inspection. As a mitigation, DoH endpoints should preferably share the same virtual host as existing, popular websites, rather than being on dedicated virtual hosts.
@@ -165,18 +177,20 @@ Go back to the online DNS stamp calculator, and copy&paste the hash (in this exa
 If you are using Let's Encrypt, the last line is likely to be:
 
 ```text
-Advertised cert: [CN=Let's Encrypt Authority X3,O=Let's Encrypt,C=US] [3e1a1a0f6c53f3e97a492d57084b5b9807059ee057ab1505876fd83fda3db838]
+Advertised cert: [CN=Let's Encrypt Authority R3,O=Let's Encrypt,C=US] [444ebd67bb83f8807b3921e938ac9178b882bd50aadb11231f044cf5f08df7ce]
 ```
 
-There you have it. Your certificate hash is `3e1a1a0f6c53f3e97a492d57084b5b9807059ee057ab1505876fd83fda3db838`.
+There you have it. Your certificate hash is `444ebd67bb83f8807b3921e938ac9178b882bd50aadb11231f044cf5f08df7ce`.
 
 This [Go code snippet](https://gist.github.com/d6cb41742a1ceb54d48cc286f3d5c5fa) can also compute the hash of certificates given a `.der` file.
 
 ### Common certificate hashes
 
-* Let's Encrypt X3: `3e1a1a0f6c53f3e97a492d57084b5b9807059ee057ab1505876fd83fda3db838`
-* Let's Encrypt R3: `3286ff65a65faf32085eea1388c3738ba7e37873c906cce3c4a28b4cc2a58988`
-* Let's Encrypt E1: `cc1060d39c8329b62b6fbc7d0d6df9309869b981e7e6392d5cd8fa408f4d80e6`
+* Let's Encrypt R3:
+  * `3286ff65a65faf32085eea1388c3738ba7e37873c906cce3c4a28b4cc2a58988` and
+  * `444ebd67bb83f8807b3921e938ac9178b882bd50aadb11231f044cf5f08df7ce`
+* Let's Encrypt E1:
+  * `cc1060d39c8329b62b6fbc7d0d6df9309869b981e7e6392d5cd8fa408f4d80e6`
 
 ## Clients
 
