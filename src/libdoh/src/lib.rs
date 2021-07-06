@@ -1,3 +1,4 @@
+mod auth;
 mod constants;
 pub mod dns;
 mod errors;
@@ -115,19 +116,36 @@ impl hyper::service::Service<http::Request<Body>> for DoH {
 }
 
 impl DoH {
+    // Added Authentication by Authorization header
     async fn serve_get(&self, req: Request<Body>) -> Result<Response<Body>, http::Error> {
-        match Self::parse_content_type(&req) {
-            Ok(DoHType::Standard) => self.serve_doh_get(req).await,
-            Ok(DoHType::Oblivious) => self.serve_odoh_get(req).await,
-            Err(response) => Ok(response),
+        // TODO: Switch by authentication flag
+        let headers = req.headers();
+        let auth_response = auth::authenticate(&headers);
+        println!("lib::serve_get auth_result {:?}", auth_response);
+        if let Err(e) = auth_response {
+            Ok(e)
+        } else {
+            match Self::parse_content_type(&req) {
+                Ok(DoHType::Standard) => self.serve_doh_get(req).await,
+                Ok(DoHType::Oblivious) => self.serve_odoh_get(req).await,
+                Err(response) => Ok(response),
+            }
         }
     }
 
     async fn serve_post(&self, req: Request<Body>) -> Result<Response<Body>, http::Error> {
-        match Self::parse_content_type(&req) {
-            Ok(DoHType::Standard) => self.serve_doh_post(req).await,
-            Ok(DoHType::Oblivious) => self.serve_odoh_post(req).await,
-            Err(response) => Ok(response),
+        // TODO: Switch by authentication flag
+        let headers = req.headers();
+        let auth_response = auth::authenticate(&headers);
+        println!("lib::serve_post auth_result {:?}", auth_response);
+        if let Err(e) = auth_response {
+            Ok(e)
+        } else {
+            match Self::parse_content_type(&req) {
+                Ok(DoHType::Standard) => self.serve_doh_post(req).await,
+                Ok(DoHType::Oblivious) => self.serve_odoh_post(req).await,
+                Err(response) => Ok(response),
+            }
         }
     }
 
