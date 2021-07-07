@@ -15,11 +15,14 @@ use crate::constants::*;
 
 use libdoh::odoh::ODoHRotator;
 use libdoh::reexports::tokio;
+use std::env;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
 fn main() {
+    env::set_var("RUST_LOG", "info");
+    env_logger::init();
     let mut runtime_builder = tokio::runtime::Builder::new_multi_thread();
     runtime_builder.enable_all();
     runtime_builder.thread_name("doh-proxy");
@@ -51,7 +54,8 @@ fn main() {
         disable_post: false,
         allow_odoh_post: false,
         disable_auth: false,
-        hmac_secret: HMAC_SECRET.to_string(), // TODO: 本当にコマンドラインで読み込むだけで良いか？ hmac secret
+        validation_key: VALIDATION_KEY.to_string(),
+        validation_algorithm: VALIDATION_ALGORITHM,
         odoh_configs_path: ODOH_CONFIGS_PATH.to_string(),
         odoh_rotator: Arc::new(rotator),
 

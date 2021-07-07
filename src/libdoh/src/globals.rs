@@ -5,6 +5,15 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::runtime;
 
+use jsonwebtoken::Algorithm;
+use std::str::FromStr;
+
+pub enum AlgorithmType {
+    HMAC,
+    EC,
+    RSA,
+}
+
 #[cfg(feature = "tls")]
 use std::path::PathBuf;
 
@@ -31,11 +40,51 @@ pub struct Globals {
     pub disable_post: bool,
     pub allow_odoh_post: bool,
     pub disable_auth: bool,
-    pub hmac_secret: String, // TODO: 本当にコマンドラインで読み込むだけで良いか？ hmac secret
+    pub validation_key: String,
+    pub validation_algorithm: Algorithm,
     pub odoh_configs_path: String,
     pub odoh_rotator: Arc<ODoHRotator>,
 
     pub runtime_handle: runtime::Handle,
+}
+
+impl Globals {
+    pub fn set_validation_algorithm(&mut self, algorithm_str: &str) {
+        if let Ok(a) = Algorithm::from_str(algorithm_str) {
+            self.validation_algorithm = a;
+        } else {
+            panic!("Invalid algorithm")
+        }
+    }
+    pub fn get_type(&self) -> AlgorithmType {
+        if self.is_hmac() {
+            AlgorithmType::HMAC
+        } else if self.is_ec() {
+            AlgorithmType::EC
+        } else {
+            AlgorithmType::RSA
+        }
+    }
+
+    pub fn is_hmac(&self) -> bool {
+        self.validation_algorithm == Algorithm::HS512
+            || self.validation_algorithm == Algorithm::HS384
+            || self.validation_algorithm == Algorithm::HS256
+    }
+
+    pub fn is_ec(&self) -> bool {
+        self.validation_algorithm == Algorithm::ES256
+            || self.validation_algorithm == Algorithm::ES384
+    }
+
+    pub fn is_rsa(&self) -> bool {
+        self.validation_algorithm == Algorithm::RS256
+            || self.validation_algorithm == Algorithm::RS384
+            || self.validation_algorithm == Algorithm::RS512
+            || self.validation_algorithm == Algorithm::PS256
+            || self.validation_algorithm == Algorithm::PS384
+            || self.validation_algorithm == Algorithm::PS512
+    }
 }
 
 #[derive(Debug, Clone, Default)]

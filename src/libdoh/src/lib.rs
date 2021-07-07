@@ -1,4 +1,5 @@
 mod auth;
+mod auth_claims;
 mod constants;
 pub mod dns;
 mod errors;
@@ -17,6 +18,7 @@ use futures::task::{Context, Poll};
 use hyper::http;
 use hyper::server::conn::Http;
 use hyper::{Body, HeaderMap, Method, Request, Response, StatusCode};
+use log::{debug, error, info, warn};
 use std::net::SocketAddr;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -121,8 +123,8 @@ impl DoH {
         if !self.globals.disable_auth {
             let headers = req.headers();
             let auth_response = auth::authenticate(&self.globals, &headers);
-            println!("lib::serve_get auth_result {:?}", auth_response);
             if let Err(e) = auth_response {
+                error!("{:?}", e);
                 return Ok(e);
             }
         }
@@ -137,8 +139,8 @@ impl DoH {
         if !self.globals.disable_auth {
             let headers = req.headers();
             let auth_response = auth::authenticate(&self.globals, &headers);
-            println!("lib::serve_post auth_result {:?}", auth_response);
             if let Err(e) = auth_response {
+                error!("{:?}", e);
                 return Ok(e);
             }
         }

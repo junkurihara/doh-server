@@ -2,7 +2,8 @@ use libdoh::*;
 
 use crate::constants::*;
 
-use clap::Arg;
+use clap::{Arg, ArgGroup};
+use std::fs;
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs};
 use std::time::Duration;
 
@@ -142,13 +143,28 @@ pub fn parse_opts(globals: &mut Globals) {
                 .help("Disable authentication using HTTP Authorization header"),
         )
         .arg(
-            // TODO: 本当にコマンドラインで読み込むだけで良いか？ hmac secret
-            Arg::with_name("hmac_secret")
-                .short("S")
-                .long("hmac-secret")
+            Arg::with_name("validation_key")
+                .short("V")
+                .long("validation-key")
                 .takes_value(true)
-                .default_value(HMAC_SECRET)
-                .help("HMAC secret key (default = \"secret\")"),
+                .help("Validation key (default = \"secret\")"),
+        )
+        .arg(
+            Arg::with_name("validation_key_path")
+                .short("W")
+                .long("validation-key-path")
+                .takes_value(true)
+                .help("Validation key file path like \"./public_key.pm\""),
+        )
+        .groups(&[
+            ArgGroup::with_name("validation").args(&["validation_key_path", "validation_key_path"])
+        ])
+        .arg(
+            Arg::with_name("validation_algorithm")
+                .short("A")
+                .long("validation-algorithm")
+                .takes_value(true)
+                .help("Signing algorithm: HS256|ES256 (default = \"HS256\")"),
         );
 
     #[cfg(feature = "tls")]
@@ -206,7 +222,29 @@ pub fn parse_opts(globals: &mut Globals) {
     globals.disable_post = matches.is_present("disable_post");
     globals.allow_odoh_post = matches.is_present("allow_odoh_post");
     globals.disable_auth = matches.is_present("disable_auth");
-    globals.hmac_secret = matches.value_of("hmac_secret").unwrap().to_string(); // TODO: 本当にコマンドラインで読み込むだけで良いか？ hmac secret
+
+    if let Some(a) = matches.value_of("validation_algorithm") {
+        globals.set_validation_algorithm(a);
+    }
+
+    if matches.is_present("validation") {
+        if let Some(s) = matches.value_of("validation_key") {
+            globals.validation_key = s.to_string();
+        } else {
+            if let Some(p) = matches.value_of("validation_key_path") {
+                if let Ok(content) = fs::read_to_string(p) {
+                    if globals.is_hmac() {
+                        let truncate_vec: Vec<&str> = content.split("\n").collect();
+                        assert_eq!(truncate_vec.len() > 0, true);
+                        globals.validation_key = truncate_vec[0].to_string();
+                    } else {
+                        globals.validation_key = (&content).to_string();
+                        //println!("{:?}", globals.validation_key);
+                    }
+                }
+            }
+        }
+    }
 
     #[cfg(feature = "tls")]
     {

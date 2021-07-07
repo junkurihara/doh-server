@@ -1,34 +1,28 @@
 /*
 // サンプルcurlコード
 // for "secret" of HS256
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjIwMDAwMDAwMDB9.Li-7bx277Fi2D4e0rau9BrXijaZOivcct0aOWVQlrHs" -H 'accept: application/dns-message' 'http://localhost:58080/dns-query?dns=rmUBAAABAAAAAAAAB2NhcmVlcnMHb3BlbmRucwNjb20AAAEAAQ' | hexdump -C
+curl -i -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0IiwiaWF0IjoxNjI1NjUzNDMyLCJleHAiOjE2NTcxODk0MzJ9.REuGilzx8syXPYdKSpAwxutXtx3HAvfrTh3As1TBUOg" -H 'accept: application/dns-message' 'http://localhost:58080/dns-query?dns=rmUBAAABAAAAAAAAB2NhcmVlcnMHb3BlbmRucwNjb20AAAEAAQ' | hexdump -C
 // for "random_secret" of HS256
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjIwMDAwMDAwMDB9.A0aUwHZGPqXOfk_wFbFC4yK6teERSFmMxjGeSd-wKYQ" -H 'accept: application/dns-message' 'http://localhost:58080/dns-query?dns=rmUBAAABAAAAAAAAB2NhcmVlcnMHb3BlbmRucwNjb20AAAEAAQ' | hexdump -C
+curl -i -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0IiwiaWF0IjoxNjI1NjUzNTYwLCJleHAiOjE2NTcxODk1NjB9.vbjO3RKchY1vTfZpERenbAnxGJivQU2VVw6tjhjKqTY" -H 'accept: application/dns-message' 'http://localhost:58080/dns-query?dns=rmUBAAABAAAAAAAAB2NhcmVlcnMHb3BlbmRucwNjb20AAAEAAQ' | hexdump -C
+// for "ThisIsExampleSecret" (secret_key_hs256.example) of HS256
+curl -i -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0IiwiaWF0IjoxNjI1NjU1ODI3LCJleHAiOjE2NTcxOTE4Mjd9.Bm19G1-jT8PFKy086svAGTOM8k2Yhsr_FH1KQTwuZ6o" -H 'accept: application/dns-message' 'http://localhost:58080/dns-query?dns=rmUBAAABAAAAAAAAB2NhcmVlcnMHb3BlbmRucwNjb20AAAEAAQ' | hexdump -C
+// for ES256 (public_key_es256.example)
+curl -i -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJzYW1wbGUtc3ViamVjdCIsImlhdCI6MTYyNTY1NTM5NywiZXhwIjoxOTQxMDE1Mzk3fQ._Wxohc89qpyRw0zXMiFh8Gof8UdgOsh2enmmUeWaOLaTAaagqVkxYGCCgj6FqHlGUkm2vrB4JQES370z8xCTdQ" -H 'accept: application/dns-message' 'http://localhost:58080/dns-query?dns=rmUBAAABAAAAAAAAB2NhcmVlcnMHb3BlbmRucwNjb20AAAEAAQ' | hexdump -C
 */
 
+use crate::auth_claims::Claims;
 use crate::globals::*;
 use hyper::{Body, Response, StatusCode};
-use jsonwebtoken::{decode, DecodingKey, Validation};
-use serde::{Deserialize, Serialize};
-
-// TODO: HMAC_SECRETは扱い方を考える。設定ファイルで与えるべきか。ES256等への対応も必要。
-
-// TODO: jwtのpayload定義。そもそもここはexpだけで良いかもしれないが、ユーザ特定したい可能性もある？
-#[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-  sub: String,
-  name: String,
-  iat: usize,
-  exp: usize,
-}
+use jsonwebtoken::{decode, decode_header, DecodingKey, Validation};
+use log::{debug, error, info, warn};
 
 pub fn authenticate(globals: &Globals, headers: &hyper::HeaderMap) -> Result<(), Response<Body>> {
-  println!("auth::authenticate, {:?}", headers);
+  debug!("auth::authenticate, {:?}", headers);
 
   let headers_map = headers.get(hyper::header::AUTHORIZATION);
   let res = match headers_map {
     None => {
-      println!("No authorization header");
+      warn!("No authorization header");
       Err(StatusCode::BAD_REQUEST)
     }
     Some(auth_header) => {
@@ -37,11 +31,11 @@ pub fn authenticate(globals: &Globals, headers: &hyper::HeaderMap) -> Result<(),
         if "Bearer" == v[0] && v.len() == 2 {
           verify_jwt(globals, v[1])
         } else {
-          println!("Invalid authorization header format");
+          error!("Invalid authorization header format");
           Err(StatusCode::BAD_REQUEST)
         }
       } else {
-        println!("Invalid authorization header format");
+        error!("Invalid authorization header format");
         Err(StatusCode::BAD_REQUEST)
       }
     }
@@ -54,20 +48,34 @@ pub fn authenticate(globals: &Globals, headers: &hyper::HeaderMap) -> Result<(),
 }
 
 fn verify_jwt(globals: &Globals, jwt: &str) -> Result<(), StatusCode> {
-  println!("auth::verify_jwt {:?}", jwt);
-  // println!("{:?}", globals.hmac_secret);
-  // `token` is a struct with 2 fields: `header` and `claims` where `claims` is your own struct.
-  // TODO: Support public key based authentication like ES256 in addition to HS256
-  let token = decode::<Claims>(
-    &jwt,
-    &DecodingKey::from_secret(globals.hmac_secret.as_ref()),
-    &Validation::default(),
-  );
-  if let Ok(_) = token {
-    println!("Valid token: {:?}", token);
-    Ok(())
+  debug!("auth::verify_jwt {:?}", jwt);
+
+  if let Ok(parsed_header) = decode_header(&jwt) {
+    let alg = parsed_header.alg;
+    if alg != globals.validation_algorithm {
+      error!("Invalid algorithm");
+      return Err(StatusCode::FORBIDDEN);
+    }
+    let decoding_key = match globals.get_type() {
+      AlgorithmType::HMAC => DecodingKey::from_secret(globals.validation_key.as_ref()),
+      AlgorithmType::EC => {
+        let ec_key_bytes = globals.validation_key.as_bytes();
+        DecodingKey::from_ec_pem(ec_key_bytes).unwrap()
+      }
+      AlgorithmType::RSA => {
+        let rsa_key_bytes = globals.validation_key.as_bytes();
+        DecodingKey::from_rsa_pem(rsa_key_bytes).unwrap()
+      }
+    };
+    let verified = decode::<Claims>(&jwt, &decoding_key, &Validation::new(alg));
+    if let Ok(_) = verified {
+      info!("Valid token: {:?}", verified);
+      Ok(())
+    } else {
+      error!("Invalid token");
+      Err(StatusCode::FORBIDDEN)
+    }
   } else {
-    println!("Invalid token");
-    Err(StatusCode::FORBIDDEN)
+    return Err(StatusCode::FORBIDDEN);
   }
 }

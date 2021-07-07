@@ -7,7 +7,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'doh-server-fork'",
+      "name": "Debug executable 'doh-proxy-auth'",
       "cargo": {
         "args": [
           "build",
@@ -26,7 +26,8 @@
       "args": [
         "--server-address=9.9.9.9:53",
         "--listen-address=127.0.0.1:58080",
-        "--hmac-secret=random_secret"
+        "--validation-algorithm=ES256",
+        "--validation-key-path=../public_key_es256.example"
       ],
       "cwd": "${workspaceFolder}/.private"
     }

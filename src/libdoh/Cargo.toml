@@ -29,6 +29,8 @@ tokio = { version="1.6.0", features=["net", "rt-multi-thread", "parking_lot", "t
 tokio-rustls = { version="0.22.0", features=["early-data"], optional=true }
 jsonwebtoken = "7"
 serde = { version="1.0", features=["derive"] }
+env_logger = "0.8"
+log = "0.4"
 
 [profile.release]
 codegen-units = 1
