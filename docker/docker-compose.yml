@@ -1,0 +1,22 @@
+version: "3"
+services:
+  doh-proxy:
+    image: jqtype/doh-proxy
+    container_name: doh-proxy
+    build:
+      context: ./
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - 3000:3000/udp
+      - 3000:3000/tcp
+    volumes:
+      - ./.env:/opt/doh-proxy/etc/.env
+      - ${VALIDATION_KEY_PATH}:/opt/doh-proxy/etc/public_key.pem
+
+  # watchtower:
+  #   image: containrrr/watchtower
+  #   container_name: watchtower
+  #   command: dnscrypt-server --interval 30
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock

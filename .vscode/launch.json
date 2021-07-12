@@ -28,6 +28,7 @@
         "--listen-address=127.0.0.1:58080",
         "--validation-algorithm=ES256",
         "--validation-key-path=../public_key_es256.example"
+        // "--disable-auth"
       ],
       "cwd": "${workspaceFolder}/.private"
     }
