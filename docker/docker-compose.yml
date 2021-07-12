@@ -13,6 +13,8 @@ services:
     volumes:
       - ./.env:/opt/doh-proxy/etc/.env
       - ${VALIDATION_KEY_PATH}:/opt/doh-proxy/etc/public_key.pem
+    networks:
+      net-front:
 
   # watchtower:
   #   image: containrrr/watchtower
@@ -20,3 +22,7 @@ services:
   #   command: dnscrypt-server --interval 30
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  net-front:
+    external: true
