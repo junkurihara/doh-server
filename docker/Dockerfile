@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -qy --no-install-recommends $BUILD_DEPS &&
     export PATH="$HOME/.cargo/bin:$PATH" && \
     echo "Building DoH Proxy from source" && \
     git clone https://github.com/junkurihara/doh-server doh-server && \
-    cd doh-server && git branch jwt-auth \
+    cd doh-server && git checkout jwt-auth && \
     cargo build --release --no-default-features&& \
     mkdir -p /opt/doh-proxy/sbin && \
     mv /tmp/doh-server/target/release/doh-proxy /opt/doh-proxy/sbin/ && \
