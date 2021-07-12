@@ -1,8 +1,8 @@
 version: "3"
 services:
   doh-proxy:
-    image: jqtype/doh-proxy
-    container_name: doh-proxy
+    image: jqtype/doh-proxy:jwt-auth
+    container_name: doh-proxy-auth
     build:
       context: ./
     restart: unless-stopped
